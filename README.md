@@ -6,9 +6,7 @@ i(Pad)?OS Devices as a DAC.
 
 with iDAC, you can use an iOS device as PulseAudio audio input/output.
 
-1. Install iproxy command (in Arch Linux, package name is `libusbmuxd`)
-1. Launch iproxy by `iproxy 48000:48000`
-    - If connected two or more devices to your computer, you may need to specify device UUID that running iDAC in iproxy options. please check iproxy help.
+1. Install inetcat command (in Arch Linux, package name is `libusbmuxd`)
 1. Create null sink that provide sounds to iDAC. (if you want to hear already exists output monitor device in iDAC, please skip this step)
     - `pactl load-module module-null-sink sink_name=iDAC_Output sink_properties=device.description=iDAC_Output format=float32le channels=2 rate=48000`
     - If successful, pactl shows number
@@ -17,7 +15,8 @@ with iDAC, you can use an iOS device as PulseAudio audio input/output.
     - If successful, pactl shows number
 1. Launch iDAC App
 1. Run command
-    - `parec --rate=48000 --format=float32le --channels=2 --device=iDAC_Output.monitor --latency-msec=1 | nc localhost 48000 | pacat --rate=48000 --format=float32le --channels=1 --latency-msec=10 --device=iDAC_Input`
+    - `parec --rate=48000 --format=float32le --channels=2 --device=iDAC_Output.monitor --latency-msec=1 | inetcat 48000 | pacat --rate=48000 --format=float32le --channels=1 --latency-msec=10 --device=iDAC_Input`
+    - If connected two or more devices to your computer, you may need to specify device UUID that running iDAC in inetcat options. please check inetcat help.
 1. Set output device to `iDAC_Output` and input device to `Monitor of iDAC_Input` or `iDAC_Input.monitor`.
 
 ### Known Issues with PulseAudio
