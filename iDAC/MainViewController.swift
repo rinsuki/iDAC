@@ -90,6 +90,9 @@ class MainViewController: UIViewController {
         setupAudio()
         RunLoop.main.add(timer, forMode: .default)
         RunLoop.main.add(timerHighFreq, forMode: .default)
+        if #available(iOS 13.0, *) {
+            isModalInPresentation = true
+        }
     }
     
     let recvCountLabel = UILabel()
