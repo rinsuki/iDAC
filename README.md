@@ -4,7 +4,7 @@ i(Pad)?OS Devices as a DAC.
 
 ## Setup with PulseAudio
 
-with iDAC, you can use iOS device as PulseAudio DAC.
+with iDAC, you can use an iOS device as PulseAudio audio input/output.
 
 1. Install iproxy command (in Arch Linux, package name is `libusbmuxd`)
 1. Launch iproxy by `iproxy 48000:48000`
@@ -23,7 +23,7 @@ with iDAC, you can use iOS device as PulseAudio DAC.
 ### Known Issues with PulseAudio
 
 - sometimes usbmuxd using 100% CPU
-    - workaround: disconnect & connect USB cable, then `sudo killall usbmuxd`
-- some Linux applications (e.g. Discord) doesn't showing iDAC_Input device and other monitor devices
+    - workaround: disconnect & connect a USB cable, then `sudo killall usbmuxd`
+- some Linux applications (e.g. Discord) doesn't show iDAC_Input device and other monitor devices
     - workaround: Use PulseAudio's `module-remap-source`.
     - Run `pactl load-module module-remap-source master=iDAC_Input.monitor source_name="iDAC_Input_Remapped"` and use `Remapped of Monitor of iDAC_Input` as input device.
