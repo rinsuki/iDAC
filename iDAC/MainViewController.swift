@@ -33,6 +33,8 @@ class MainViewController: UIViewController {
         let stackView = UIStackView(arrangedSubviews: [
             recvCountLabel,
             sendCountLabel,
+            bufferMaxSlider,
+            playBufferLabel,
             skipButton
         ])
         stackView.axis = .vertical
@@ -49,21 +51,30 @@ class MainViewController: UIViewController {
         }
         recvCountLabel.font = monospaceFont
         sendCountLabel.font = monospaceFont
+        playBufferLabel.font = monospaceFont
         skipButton.backgroundColor = skipButton.tintColor
         skipButton.setTitleColor(.white, for: .normal)
         skipButton.setTitle("Stop add sounds to buffer while tapping here", for: .normal)
         skipButton.contentEdgeInsets = .init(top: 16, left: 16, bottom: 16, right: 16)
+        bufferMaxSlider.minimumValue = 10
+        bufferMaxSlider.maximumValue = 100
+        bufferMaxSlider.value = 20
+        bufferMaxSlider.isContinuous = true
     }
     
     let skipButton = UIButton(type: .custom)
-    var skipNow = false
+    var skipNow: Bool {
+        return skipNowByButton || skipNowByLargeBuffer
+    }
+    var skipNowByButton = false
+    var skipNowByLargeBuffer = false
     
     @objc func startSkip() {
-        skipNow = true
+        skipNowByButton = true
     }
     
     @objc func endSkip() {
-        skipNow = false
+        skipNowByButton = false
     }
     
     override func viewDidLoad() {
@@ -74,16 +85,21 @@ class MainViewController: UIViewController {
         skipButton.addTarget(self, action: #selector(endSkip), for: .touchUpInside)
         skipButton.addTarget(self, action: #selector(endSkip), for: .touchUpOutside)
         navigationItem.rightBarButtonItem = .init(title: "Stop", style: .done, target: self, action: #selector(close))
+        bufferMaxSlider.addTarget(self, action: #selector(bufferMaxChanged), for: .valueChanged)
 
         setupAudio()
         RunLoop.main.add(timer, forMode: .default)
+        RunLoop.main.add(timerHighFreq, forMode: .default)
     }
     
     let recvCountLabel = UILabel()
     let sendCountLabel = UILabel()
+    let playBufferLabel = UILabel()
     var recvCount = 0
     var sendCount = 0
+    var playBufferMilliSec: Double = 0
     lazy var timer = Timer(timeInterval: 1, target: self, selector: #selector(updateCounts), userInfo: nil, repeats: true)
+    lazy var timerHighFreq = Timer(timeInterval: 0.1, target: self, selector: #selector(updateCountsHighFreq), userInfo: nil, repeats: true)
     
     @objc func updateCounts() {
         recvCountLabel.text = "Recv: \(recvCount)packet/sec (≒\(String(format: "%.1f", 1000.0/Double(recvCount)))ms/packet)"
@@ -91,7 +107,19 @@ class MainViewController: UIViewController {
         recvCount = 0
         sendCount = 0
     }
+    
+    @objc func updateCountsHighFreq() {
+        playBufferLabel.text = "Buffer: \(String(format: "%.1f", playBufferMilliSec))msec (max: \(bufferMaxMsec)msec)"
+    }
+    
+    var bufferMaxMsec: Double = 1000/30
+    let bufferMaxSlider = UISlider()
 
+    @objc func bufferMaxChanged() {
+        let v = round(bufferMaxSlider.value / 5) * 5
+        bufferMaxSlider.value = v
+        bufferMaxMsec = Double(v)
+    }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
@@ -177,9 +205,18 @@ class MainViewController: UIViewController {
             }
         }
         self.recvCount += 1
+        if skipNowByLargeBuffer {
+            if playBufferMilliSec < (bufferMaxMsec / 2) {
+                skipNowByLargeBuffer = false
+            }
+        } else if playBufferMilliSec > bufferMaxMsec {
+            skipNowByLargeBuffer = true
+        }
         if !skipNow {
-            player.scheduleBuffer(buffer) {
-                // nothing
+            let msec = Double(dataFrameLength * 1000) / format.sampleRate
+            self.playBufferMilliSec += msec
+            player.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+                self?.playBufferMilliSec -= msec
             }
         }
         receive()
