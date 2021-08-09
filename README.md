@@ -25,4 +25,4 @@ with iDAC, you can use an iOS device as PulseAudio audio input/output.
     - workaround: disconnect & connect a USB cable, then `sudo killall usbmuxd`
 - some Linux applications (e.g. Discord) doesn't show iDAC_Input device and other monitor devices
     - workaround: Use PulseAudio's `module-remap-source`.
-    - Run `pactl load-module module-remap-source master=iDAC_Input.monitor source_name="iDAC_Input_Remapped"` and use `Remapped of Monitor of iDAC_Input` as input device.
+    - Run `pactl load-module module-remap-source master=iDAC_Input.monitor source_name="iDAC_Input_Remapped"` and use `Remapped Monitor of iDAC_Input` as input device.
